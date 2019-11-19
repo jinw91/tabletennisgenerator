@@ -40,6 +40,7 @@ namespace TableTennisGenerator
         public Tournament(List<string> playerNames, int numRounds, int simultaneousMatches, string fileDirectory) : this(playerNames.Count, numRounds, simultaneousMatches, fileDirectory)
         {
             _playerNames = playerNames;
+            InitializeMetrics();
         }
 
         public void InitializeMetrics()
