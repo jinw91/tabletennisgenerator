@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
 
 namespace TableTennisGenerator
 {
@@ -11,15 +11,34 @@ namespace TableTennisGenerator
         int numRounds;
         int simultaneousMatches;
         Dictionary<int, List<int>> players;
+        Dictionary<int, int> playCounts;
+        Dictionary<int, List<int>> partners;
+        StreamWriter stream;
 
-        public Tournament(int numPlayers, int numRounds, int simultaneousMatches)
+        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory)
         {
             // TODO: error checking of params
             this.numPlayers = numPlayers;
             this.numRounds = numRounds;
             this.simultaneousMatches = simultaneousMatches;
 
+            string fileName = DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv";
+            stream = new StreamWriter(Path.Combine(fileDirectory, fileName), false);
+
             players = InitializeGraph();
+            InitializeMetrics();
+        }
+
+        public void InitializeMetrics()
+        {
+            playCounts = new Dictionary<int, int>();
+            partners = new Dictionary<int, List<int>>();
+
+            for (int i = 0; i < numPlayers; i++)
+            {
+                playCounts.Add(i, 0);
+                partners.Add(i, new List<int>());
+            }
         }
 
         public Dictionary<int, List<int>> InitializeGraph()
@@ -41,6 +60,31 @@ namespace TableTennisGenerator
             return players;
         }
 
+        public void BuildTournament()
+        {
+            stream.WriteLine($"{numPlayers},{numRounds},{simultaneousMatches}");
+
+            for (int i = 0; i < numRounds; i++)
+            {
+                BuildRound();
+            }
+
+            for (int i=0; i<numPlayers; i++)
+            {
+                Console.WriteLine($"Player {i}: {playCounts[i]} games played");
+                stream.Write($"{i},");
+                Console.WriteLine("Partners: ");
+                for (int j = 0; j < partners[i].Count; j++)
+                {
+                    Console.Write($"{partners[i][j]}, ");
+                    stream.Write($"{partners[i][j]},");
+                }
+                Console.WriteLine();
+                stream.WriteLine();
+            }
+            stream.Close();
+        }
+
         public void BuildRound()
         {
             bool[] visited = new bool[numPlayers];
@@ -51,11 +95,15 @@ namespace TableTennisGenerator
             {
                 try
                 {
-                    roundMatches.Add(BuildMatch(visited));
+                    List<Tuple<int, int>> teams = BuildMatch(visited);
+                    CollectMetrics(teams);
+                    Console.WriteLine($"{teams[0].Item1} and {teams[0].Item2} vs {teams[1].Item1} and {teams[1].Item2}");
+                    roundMatches.Add(teams);
                 }
                 catch
                 {
-                    InitializeGraph();
+                    Console.WriteLine("Resetting graph.");
+                    players = InitializeGraph();
                     foreach (List<Tuple<int, int>> matches in roundMatches)
                     {
                         foreach (Tuple<int, int> pair in matches)
@@ -68,6 +116,18 @@ namespace TableTennisGenerator
                 }
             }
 
+        }
+
+        public void CollectMetrics(List<Tuple<int, int>> teams)
+        {
+            playCounts[teams[0].Item1]++;
+            playCounts[teams[0].Item2]++;
+            playCounts[teams[1].Item1]++;
+            playCounts[teams[1].Item2]++;
+            partners[teams[0].Item1].Add(teams[0].Item2);
+            partners[teams[0].Item2].Add(teams[0].Item1);
+            partners[teams[1].Item1].Add(teams[1].Item2);
+            partners[teams[1].Item2].Add(teams[1].Item1);
         }
 
         public List<Tuple<int, int>> BuildMatch(bool[] visited)
@@ -122,16 +182,17 @@ namespace TableTennisGenerator
 
         public int FindPartner(int player, bool[] visited)
         {
-            List<int> potentials = new List<int>();
+            int partner = -1;
+            int max = 0;
             foreach (int p in players[player])
             {
-                if (!visited[p])
+                if (!visited[p] && players[p].Count > max)
                 {
-                    potentials.Add(p);
+                    partner = p;
+                    max = players[p].Count;
                 }
             }
-            Random rand = new Random();
-            return potentials[rand.Next(potentials.Count)];
+            return partner;
         }
         
     }
