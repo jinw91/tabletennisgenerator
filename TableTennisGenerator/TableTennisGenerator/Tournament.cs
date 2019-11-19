@@ -12,9 +12,9 @@ namespace TableTennisGenerator
         int _numRounds;
         int _simultaneousMatches;
         Dictionary<int, List<int>> _players;
-        Dictionary<int, int> _playCounts;
-        Dictionary<int, List<int>> _partners;
-        List<string> _playerNames;
+        Dictionary<string, int> _playCounts;
+        Dictionary<string, List<string>> _partners;
+        List<string> _playerNames;  // mapping of index (used to reference player in _players) to string name (used in metrics reporting)
         StreamWriter _stream;
 
         public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory)
@@ -44,13 +44,13 @@ namespace TableTennisGenerator
 
         public void InitializeMetrics()
         {
-            _playCounts = new Dictionary<int, int>();
-            _partners = new Dictionary<int, List<int>>();
+            _playCounts = new Dictionary<string, int>();
+            _partners = new Dictionary<string, List<string>>();
 
             for (int i = 0; i < _numPlayers; i++)
             {
-                _playCounts.Add(i, 0);
-                _partners.Add(i, new List<int>());
+                _playCounts.Add(_playerNames[i], 0);
+                _partners.Add(_playerNames[i], new List<string>());
             }
         }
 
@@ -58,7 +58,7 @@ namespace TableTennisGenerator
         {
             Dictionary<int, List<int>> players = new Dictionary<int, List<int>>();
             // construct fully-connected graph w/ numPlayers nodes
-            for (int i = 0; i < _numPlayers; i++)  // TODO: switch to actual player names
+            for (int i = 0; i < _numPlayers; i++)  
             {
                 List<int> otherPlayers = new List<int>();
                 for (int j = 0; j < _numPlayers; j++)
@@ -75,24 +75,35 @@ namespace TableTennisGenerator
 
         public void BuildTournament()
         {
-            _stream.WriteLine($"{_numPlayers},{_numRounds},{_simultaneousMatches}");
+            RecordTournamentMetrics();
 
             for (int i = 0; i < _numRounds; i++)
             {
                 BuildRound();
             }
 
-            for (int i=0; i<_numPlayers; i++)
+            RecordRoundMetrics();
+        }
+
+        public void RecordTournamentMetrics()
+        {
+            _stream.WriteLine("Number of Players, Number of Rounds, Number of Simultaneous Matches");
+            _stream.WriteLine($"{_numPlayers},{_numRounds},{_simultaneousMatches}");
+            _stream.WriteLine();
+            _stream.WriteLine("Team1-Player1, Team1-Player2, Team2-Player1, Team2-Player2");
+        }
+
+        public void RecordRoundMetrics()
+        {
+            _stream.WriteLine();
+            _stream.WriteLine("Player, Partners-->");
+            for (int i = 0; i < _numPlayers; i++)
             {
-                Console.WriteLine($"Player {i}: {_playCounts[i]} games played");
                 _stream.Write($"{i},");
-                Console.WriteLine("Partners: ");
-                for (int j = 0; j < _partners[i].Count; j++)
+                for (int j = 0; j < _partners[_playerNames[i]].Count; j++)
                 {
-                    Console.Write($"{_partners[i][j]}, ");
-                    _stream.Write($"{_partners[i][j]},");
+                    _stream.Write($"{_partners[_playerNames[i]][j]},");
                 }
-                Console.WriteLine();
                 _stream.WriteLine();
             }
             _stream.Close();
@@ -110,7 +121,6 @@ namespace TableTennisGenerator
                 {
                     List<Tuple<int, int>> teams = BuildMatch(visited);
                     CollectMetrics(teams);
-                    Console.WriteLine($"{teams[0].Item1} and {teams[0].Item2} vs {teams[1].Item1} and {teams[1].Item2}");
                     roundMatches.Add(teams);
                 }
                 catch
@@ -133,14 +143,17 @@ namespace TableTennisGenerator
 
         public void CollectMetrics(List<Tuple<int, int>> teams)
         {
-            _playCounts[teams[0].Item1]++;
-            _playCounts[teams[0].Item2]++;
-            _playCounts[teams[1].Item1]++;
-            _playCounts[teams[1].Item2]++;
-            _partners[teams[0].Item1].Add(teams[0].Item2);
-            _partners[teams[0].Item2].Add(teams[0].Item1);
-            _partners[teams[1].Item1].Add(teams[1].Item2);
-            _partners[teams[1].Item2].Add(teams[1].Item1);
+            _playCounts[_playerNames[teams[0].Item1]]++;
+            _playCounts[_playerNames[teams[0].Item2]]++;
+            _playCounts[_playerNames[teams[1].Item1]]++;
+            _playCounts[_playerNames[teams[1].Item2]]++;
+            _partners[_playerNames[teams[0].Item1]].Add(_playerNames[teams[0].Item2]);
+            _partners[_playerNames[teams[0].Item2]].Add(_playerNames[teams[0].Item1]);
+            _partners[_playerNames[teams[1].Item1]].Add(_playerNames[teams[1].Item2]);
+            _partners[_playerNames[teams[1].Item2]].Add(_playerNames[teams[1].Item1]);
+
+            _stream.WriteLine($"{_playerNames[teams[0].Item1]}, {_playerNames[teams[0].Item2]}, " +
+                $"{_playerNames[teams[1].Item1]}, {_playerNames[teams[1].Item2]}");
         }
 
         public List<Tuple<int, int>> BuildMatch(bool[] visited)
