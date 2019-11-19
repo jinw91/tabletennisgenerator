@@ -113,7 +113,7 @@ namespace TableTennisGenerator
                     Console.WriteLine($"{teams[0].Item1} and {teams[0].Item2} vs {teams[1].Item1} and {teams[1].Item2}");
                     roundMatches.Add(teams);
                 }
-                catch
+                catch (InvalidOperationException)
                 {
                     Console.WriteLine("Resetting graph.");
                     _players = InitializeGraph();
@@ -145,13 +145,15 @@ namespace TableTennisGenerator
 
         public List<Tuple<int, int>> BuildMatch(bool[] visited)
         {
+            bool[] visitedOG = new bool[visited.Length];
+            Array.Copy(visited, visitedOG, visited.Length);
             Tuple<int, int> team1 = FindTeam(visited);
             Tuple<int, int> team2;
             try
             {
                 team2 = FindTeam(visited);
             }
-            catch
+            catch (InvalidOperationException)
             {
                 visited[team1.Item1] = false;
                 visited[team1.Item2] = false;
@@ -170,9 +172,13 @@ namespace TableTennisGenerator
             int starter = FindMostConnectedPlayer(visited);
             if (starter == -1)
             {
-                throw new Exception();
+                throw new InvalidOperationException();
             }
             int partner = FindPartner(starter, visited);
+            if (partner == -1)
+            {
+                throw new InvalidOperationException();
+            }
             visited[starter] = true;
             visited[partner] = true;
             return new Tuple<int, int>(starter, partner);
@@ -194,7 +200,7 @@ namespace TableTennisGenerator
             List<int> maxPlayers = new List<int>();
             foreach (int p in possiblePlayers)
             {
-                if (!visited[p])
+                if (_players[p].Count > 0 && !visited[p])
                 {
                     if (_players[p].Count == max)
                     {
