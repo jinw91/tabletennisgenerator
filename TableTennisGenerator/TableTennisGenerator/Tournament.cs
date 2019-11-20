@@ -12,10 +12,8 @@ namespace TableTennisGenerator
         int _numRounds;
         int _simultaneousMatches;
         Dictionary<int, List<int>> _players;
-        Dictionary<string, int> _playCounts;
-        Dictionary<string, List<string>> _partners;
         List<string> _playerNames;  // mapping of index (used to reference player in _players) to string name (used in metrics reporting)
-        StreamWriter _stream;
+        string _outputDir;
 
         public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory)
         {
@@ -23,9 +21,7 @@ namespace TableTennisGenerator
             _numPlayers = numPlayers;
             _numRounds = numRounds;
             _simultaneousMatches = simultaneousMatches;
-
-            string fileName = DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv";
-            _stream = new StreamWriter(Path.Combine(fileDirectory, fileName), false);
+            _outputDir = fileDirectory;
 
             _playerNames = new List<string>();
             for (int i=0; i<numPlayers; i++)
@@ -34,13 +30,11 @@ namespace TableTennisGenerator
             }
 
             _players = InitializeGraph();
-            InitializeMetrics();
         }
 
         public Tournament(List<string> playerNames, int numRounds, int simultaneousMatches, string fileDirectory) : this(playerNames.Count, numRounds, simultaneousMatches, fileDirectory)
         {
             _playerNames = playerNames;
-            InitializeMetrics();
         }
 
         public static List<string> ReadNamesFromFile(string fileName)
@@ -59,18 +53,6 @@ namespace TableTennisGenerator
         }
 
         public Tournament(string playerNamesFile, int numRounds, int simultaneousMatches, string fileDirectory) : this(ReadNamesFromFile(playerNamesFile), numRounds, simultaneousMatches, fileDirectory) { }
-
-        public void InitializeMetrics()
-        {
-            _playCounts = new Dictionary<string, int>();
-            _partners = new Dictionary<string, List<string>>();
-
-            for (int i = 0; i < _numPlayers; i++)
-            {
-                _playCounts.Add(_playerNames[i], 0);
-                _partners.Add(_playerNames[i], new List<string>());
-            }
-        }
 
         public Dictionary<int, List<int>> InitializeGraph()
         {
@@ -93,41 +75,25 @@ namespace TableTennisGenerator
 
         public void BuildTournament()
         {
-            RecordTournamentMetrics();
+            StreamWriter outputStream = SetupTournamentOutput();
 
             for (int i = 0; i < _numRounds; i++)
             {
-                BuildRound();
+                List<List<Tuple<int, int>>> roundMatches = BuildRound();
+                OutputRoundMatches((i+1), roundMatches, outputStream);
             }
-
-            RecordRoundMetrics();
+            outputStream.Close();
         }
 
-        public void RecordTournamentMetrics()
+        public StreamWriter SetupTournamentOutput()
         {
-            _stream.WriteLine("Number of Players, Number of Rounds, Number of Simultaneous Matches");
-            _stream.WriteLine($"{_numPlayers},{_numRounds},{_simultaneousMatches}");
-            _stream.WriteLine();
-            _stream.WriteLine("Team1-Player1, Team1-Player2, Team2-Player1, Team2-Player2");
+            string fileName = "tournament_matches_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv";
+            StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
+            stream.WriteLine("Round, Match, Team1 Player1, Team1 Player2, Team2 Player1, Team2 Player2, Team1 Score, Team2 Score");
+            return stream;
         }
 
-        public void RecordRoundMetrics()
-        {
-            _stream.WriteLine();
-            _stream.WriteLine("Player, Partners-->");
-            for (int i = 0; i < _numPlayers; i++)
-            {
-                _stream.Write($"{i},");
-                for (int j = 0; j < _partners[_playerNames[i]].Count; j++)
-                {
-                    _stream.Write($"{_partners[_playerNames[i]][j]},");
-                }
-                _stream.WriteLine();
-            }
-            _stream.Close();
-        }
-
-        public void BuildRound()
+        public List<List<Tuple<int, int>>> BuildRound()
         {
             bool[] visited = new bool[_numPlayers];
 
@@ -138,7 +104,6 @@ namespace TableTennisGenerator
                 try
                 {
                     List<Tuple<int, int>> teams = BuildMatch(visited);
-                    CollectMetrics(teams);
                     roundMatches.Add(teams);
                 }
                 catch (InvalidOperationException)
@@ -156,22 +121,21 @@ namespace TableTennisGenerator
                     i--;  // this match didn't actually return players; it just rebuilt the graph so redo it
                 }
             }
-
+            return roundMatches;
         }
 
-        public void CollectMetrics(List<Tuple<int, int>> teams)
+        public void OutputRoundMatches(int round, List<List<Tuple<int, int>>> roundMatches, StreamWriter outputStream)
         {
-            _playCounts[_playerNames[teams[0].Item1]]++;
-            _playCounts[_playerNames[teams[0].Item2]]++;
-            _playCounts[_playerNames[teams[1].Item1]]++;
-            _playCounts[_playerNames[teams[1].Item2]]++;
-            _partners[_playerNames[teams[0].Item1]].Add(_playerNames[teams[0].Item2]);
-            _partners[_playerNames[teams[0].Item2]].Add(_playerNames[teams[0].Item1]);
-            _partners[_playerNames[teams[1].Item1]].Add(_playerNames[teams[1].Item2]);
-            _partners[_playerNames[teams[1].Item2]].Add(_playerNames[teams[1].Item1]);
-
-            _stream.WriteLine($"{_playerNames[teams[0].Item1]}, {_playerNames[teams[0].Item2]}, " +
-                $"{_playerNames[teams[1].Item1]}, {_playerNames[teams[1].Item2]}");
+            for(int i = 0; i < roundMatches.Count; i++)
+            {
+                List<Tuple<int, int>> match = roundMatches[i];
+                outputStream.Write($"{round}, {i+1},");
+                foreach (Tuple<int, int> team in match)
+                {
+                    outputStream.Write($"{_playerNames[team.Item1]}, {_playerNames[team.Item2]},");
+                }
+                outputStream.WriteLine();
+            }
         }
 
         public List<Tuple<int, int>> BuildMatch(bool[] visited)
