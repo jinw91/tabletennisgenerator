@@ -12,8 +12,6 @@ namespace TableTennisGenerator
         int _numRounds;
         int _simultaneousMatches;
         Dictionary<int, List<int>> _players;
-        Dictionary<string, int> _playCounts;
-        Dictionary<string, List<string>> _partners;
         List<string> _playerNames;  // mapping of index (used to reference player in _players) to string name (used in metrics reporting)
         string _outputDir;
 
