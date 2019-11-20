@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace TableTennisGenerator
 {
- 
+
     class Tournament
     {
         int _numPlayers;
@@ -42,6 +42,23 @@ namespace TableTennisGenerator
             _playerNames = playerNames;
             InitializeMetrics();
         }
+
+        public static List<string> ReadNamesFromFile(string fileName)
+        {
+            List<string> playerNames = new List<string>();
+            using (StreamReader reader = new StreamReader(fileName))
+            {
+                while (!reader.EndOfStream)
+                {
+                    string line = reader.ReadLine();
+                    string[] names = line.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    playerNames.AddRange(names);
+                }
+            }
+            return playerNames;
+        }
+
+        public Tournament(string playerNamesFile, int numRounds, int simultaneousMatches, string fileDirectory) : this(ReadNamesFromFile(playerNamesFile), numRounds, simultaneousMatches, fileDirectory) { }
 
         public void InitializeMetrics()
         {
