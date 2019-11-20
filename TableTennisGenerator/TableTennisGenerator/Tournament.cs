@@ -85,7 +85,6 @@ namespace TableTennisGenerator
                 OutputRoundMatches((i+1), roundMatches, outputStream);
             }
             outputStream.Close();
-            //RecordRoundMetrics();
         }
 
         public StreamWriter SetupTournamentOutput()
