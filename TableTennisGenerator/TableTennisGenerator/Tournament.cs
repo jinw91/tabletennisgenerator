@@ -14,8 +14,10 @@ namespace TableTennisGenerator
         Dictionary<int, List<int>> _players;
         List<string> _playerNames;  // mapping of index (used to reference player in _players) to string name (used in metrics reporting)
         string _outputDir;
+        bool _collectMetrics;
+        string _tournamentId;
 
-        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory)
+        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory, bool collectMetrics)
         {
             // TODO: error checking of params
             _numPlayers = numPlayers;
@@ -30,7 +32,12 @@ namespace TableTennisGenerator
             }
 
             _players = InitializeGraph();
+
+            _collectMetrics = collectMetrics;
+            _tournamentId = DateTime.Now.ToString("yyyyMMddHHmmssffff");
         }
+
+        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory) : this(numPlayers, numRounds, simultaneousMatches, fileDirectory, false) { }
 
         public Tournament(List<string> playerNames, int numRounds, int simultaneousMatches, string fileDirectory) : this(playerNames.Count, numRounds, simultaneousMatches, fileDirectory)
         {
@@ -77,20 +84,100 @@ namespace TableTennisGenerator
         {
             StreamWriter outputStream = SetupTournamentOutput();
 
+            HashSet<int>[] uniquePartners = new HashSet<int>[_numPlayers];
+            HashSet<int>[] uniqueOpponents = new HashSet<int>[_numPlayers];
+            Dictionary<int, Dictionary<string, int>> metrics = InitializeMetrics(uniquePartners, uniqueOpponents); // all metrics collected using player IDs & converted to string names when output
+
             for (int i = 0; i < _numRounds; i++)
             {
                 List<List<Tuple<int, int>>> roundMatches = BuildRound();
                 OutputRoundMatches((i+1), roundMatches, outputStream);
+
+                if (_collectMetrics) { RecordRoundMetrics(roundMatches, uniquePartners, uniqueOpponents, metrics); }
             }
+
+            if (_collectMetrics) { OutputTournamentMetrics(metrics);  }
+
             outputStream.Close();
         }
 
         public StreamWriter SetupTournamentOutput()
         {
-            string fileName = "tournament_matches_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv";
+            string fileName = "tournament_matches_" + _tournamentId + ".csv";
             StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
-            stream.WriteLine("Round, Match, Team1 Player1, Team1 Player2, Team2 Player1, Team2 Player2, Team1 Score, Team2 Score");
+            stream.WriteLine("Round,Match,Team1 Player1,Team1 Player2,Team2 Player1,Team2 Player2,Team1 Score,Team2 Score");
             return stream;
+        }
+
+
+        public Dictionary<int, Dictionary<string, int>> InitializeMetrics(HashSet<int>[] uniquePartners, HashSet<int>[] uniqueOpponents)
+        {
+            Dictionary<int, Dictionary<string, int>> metrics = new Dictionary<int, Dictionary<string, int>>();
+            if (_collectMetrics)
+            {
+                for (int i = 0; i < _numPlayers; i++)
+                {
+                    metrics.Add(i, new Dictionary<string, int>
+                                        {
+                                            { "gamesPlayed", 0 },
+                                            { "uniquePartners", 0 },
+                                            { "uniqueOpponents", 0 }
+                                        });
+                    uniquePartners[i] = new HashSet<int>();
+                    uniqueOpponents[i] = new HashSet<int>();
+                }
+            }
+            return metrics;
+        }
+
+        public void RecordRoundMetrics(List<List<Tuple<int, int>>> roundMatches, HashSet<int>[] uniquePartners, HashSet<int>[] uniqueOpponents, Dictionary<int, Dictionary<string, int>> metrics)
+        {
+            foreach (List<Tuple<int, int>> match in roundMatches)
+            {
+                for (int i = 0; i < match.Count; i++)  // foreach team in the match
+                {
+                    Tuple<int, int> team = match[i];
+                    Tuple<int, int> otherTeam = match[(i == 0 ? 1 : 0)];   // relies on there only being two teams per match
+
+                    if (!uniquePartners[team.Item1].Contains(team.Item2))
+                    {
+                        uniquePartners[team.Item1].Add(team.Item2);
+                        uniquePartners[team.Item2].Add(team.Item1);
+                        metrics[team.Item2]["uniquePartners"]++;
+                        metrics[team.Item1]["uniquePartners"]++;
+                    }
+
+                    RecordOpponent(team.Item1, otherTeam.Item1, uniqueOpponents, metrics);
+                    RecordOpponent(team.Item1, otherTeam.Item2, uniqueOpponents, metrics);
+                    RecordOpponent(team.Item2, otherTeam.Item1, uniqueOpponents, metrics);
+                    RecordOpponent(team.Item2, otherTeam.Item2, uniqueOpponents, metrics);
+
+                    metrics[team.Item1]["gamesPlayed"]++;
+                    metrics[team.Item2]["gamesPlayed"]++;
+                }
+            }
+        }
+
+        public void RecordOpponent(int player, int opponent, HashSet<int>[] uniqueOpponents, Dictionary<int, Dictionary<string, int>> metrics)
+        {
+            if (!uniqueOpponents[player].Contains(opponent))
+            {
+                uniqueOpponents[player].Add(opponent);
+                metrics[player]["uniqueOpponents"]++;
+            }
+        }
+
+        public void OutputTournamentMetrics(Dictionary<int, Dictionary<string, int>> metrics)
+        {
+            string fileName = "tournament_metrics_" + _tournamentId + ".csv";
+            StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
+            stream.WriteLine("numRounds,simMatches,player,gamesPlayed,uniquePartners,uniqueOpponents");
+            foreach (KeyValuePair<int, Dictionary<string, int>> entry in metrics)
+            {
+                stream.WriteLine($"{_numRounds}, {_simultaneousMatches}, {_playerNames[entry.Key]}, " +
+                    $"{entry.Value["gamesPlayed"]}, {entry.Value["uniquePartners"]}, {entry.Value["uniqueOpponents"]}");
+            }
+            stream.Close();
         }
 
         public List<List<Tuple<int, int>>> BuildRound()
@@ -216,6 +303,6 @@ namespace TableTennisGenerator
             }
             return mostConnectedPlayer;
         }
-        
+
     }
 }
