@@ -34,7 +34,7 @@ namespace TableTennisGenerator
             _players = InitializeGraph();
 
             _collectMetrics = collectMetrics;
-            _tournamentId = DateTime.Now.ToString("yyyyMMddHHmmss");
+            _tournamentId = DateTime.Now.ToString("yyyyMMddHHmmssffff");
         }
 
         public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory) : this(numPlayers, numRounds, simultaneousMatches, fileDirectory, false) { }
