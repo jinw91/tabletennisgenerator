@@ -105,7 +105,7 @@ namespace TableTennisGenerator
         {
             string fileName = "tournament_matches_" + _tournamentId + ".csv";
             StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
-            stream.WriteLine("Round, Match, Team1 Player1, Team1 Player2, Team2 Player1, Team2 Player2, Team1 Score, Team2 Score");
+            stream.WriteLine("Round,Match,Team1 Player1,Team1 Player2,Team2 Player1,Team2 Player2,Team1 Score,Team2 Score");
             return stream;
         }
 
@@ -171,7 +171,7 @@ namespace TableTennisGenerator
         {
             string fileName = "tournament_metrics_" + _tournamentId + ".csv";
             StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
-            stream.WriteLine("numRounds, simMatches, player, gamesPlayed, uniquePartners, uniqueOpponents");
+            stream.WriteLine("numRounds,simMatches,player,gamesPlayed,uniquePartners,uniqueOpponents");
             foreach (KeyValuePair<int, Dictionary<string, int>> entry in metrics)
             {
                 stream.WriteLine($"{_numRounds}, {_simultaneousMatches}, {_playerNames[entry.Key]}, " +
