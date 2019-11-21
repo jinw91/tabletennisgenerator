@@ -14,8 +14,9 @@ namespace TableTennisGenerator
         Dictionary<int, List<int>> _players;
         List<string> _playerNames;  // mapping of index (used to reference player in _players) to string name (used in metrics reporting)
         string _outputDir;
+        bool _collectMetrics; // all metrics collected using player IDs & converted to string names when output
 
-        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory)
+        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory, bool collectMetrics)
         {
             // TODO: error checking of params
             _numPlayers = numPlayers;
@@ -30,7 +31,11 @@ namespace TableTennisGenerator
             }
 
             _players = InitializeGraph();
+
+            _collectMetrics = collectMetrics;
         }
+
+        public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory) : this(numPlayers, numRounds, simultaneousMatches, fileDirectory, false) { }
 
         public Tournament(List<string> playerNames, int numRounds, int simultaneousMatches, string fileDirectory) : this(playerNames.Count, numRounds, simultaneousMatches, fileDirectory)
         {
@@ -77,10 +82,19 @@ namespace TableTennisGenerator
         {
             StreamWriter outputStream = SetupTournamentOutput();
 
+            if (_collectMetrics)
+            {
+                HashSet<int>[] uniquePartners = new HashSet<int>[_numPlayers];
+                HashSet<int>[] uniqueOpponents = new HashSet<int>[_numPlayers];
+                Dictionary<int, Dictionary<string, int>> metrics = InitializeMetrics();
+            }
+
             for (int i = 0; i < _numRounds; i++)
             {
                 List<List<Tuple<int, int>>> roundMatches = BuildRound();
                 OutputRoundMatches((i+1), roundMatches, outputStream);
+
+                if (_collectMetrics) { RecordRoundMetrics(roundMatches, uniquePartners, uniqueOpponents, metrics); }
             }
             outputStream.Close();
         }
@@ -91,6 +105,42 @@ namespace TableTennisGenerator
             StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
             stream.WriteLine("Round, Match, Team1 Player1, Team1 Player2, Team2 Player1, Team2 Player2, Team1 Score, Team2 Score");
             return stream;
+        }
+
+
+        public Dictionary<int, Dictionary<string, int>> InitializeMetrics()
+        {
+            Dictionary<int, Dictionary<string, int>> metrics = new Dictionary<int, Dictionary<string, int>>();
+            for (int i = 0; i < _numPlayers; i++)
+            {
+                metrics.Add(i, new Dictionary<string, int>
+                                    {
+                                        { "gamesPlayed", 0 },
+                                        { "uniquePartners", 0 },
+                                        { "uniqueOpponents", 0 }
+                                    });
+            }
+            return metrics;
+        }
+
+        public void RecordRoundMetrics(List<List<Tuple<int, int>>> roundMatches, HashSet<int>[] uniquePartners, HashSet<int>[] uniqueOpponents, Dictionary<int, Dictionary<string, int>> metrics)
+        {
+            foreach (List<Tuple<int, int>> match in roundMatches)
+            {
+                foreach (Tuple<int, int> team in match)
+                {
+                    int player1 = team.Item1;
+                    int player2 = team.Item2;
+                    if (!uniquePartners[team.Item1].Contains(team.Item2))
+                    {
+                        uniquePartners[team.Item1].Add(team.Item2);
+                        metrics[team.Item1]["uniquePartners"]++;
+                    }
+
+                    metrics[team.Item1]["gamesPlayed"]++;
+                    metrics[team.Item2]["gamesPlayed"]++;
+                }
+            }
         }
 
         public List<List<Tuple<int, int>>> BuildRound()
@@ -216,6 +266,6 @@ namespace TableTennisGenerator
             }
             return mostConnectedPlayer;
         }
-        
+
     }
 }
