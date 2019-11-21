@@ -30,6 +30,7 @@ Assumptions:
 
 #### Example
 Given the list of players ```Sally, John, Bill, Bob```, 1 simultaneous match, and 4 rounds, the program could produce the following:
+
 |  Round | Match | Team1, Player1 | Team1, Player2 | Team2, Player1 | Team2, Player1 |
 |--------|-------|----------------|----------------|----------------|----------------|
 | 1 | 1 | Sally | John | Bill | Bob|
