@@ -34,7 +34,7 @@ namespace TableTennisGenerator
             _players = InitializeGraph();
 
             _collectMetrics = collectMetrics;
-            _tournamentId = DateTime.Now.ToString("yyyyMMddHHmmss")
+            _tournamentId = DateTime.Now.ToString("yyyyMMddHHmmss");
         }
 
         public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory) : this(numPlayers, numRounds, simultaneousMatches, fileDirectory, false) { }
@@ -86,7 +86,7 @@ namespace TableTennisGenerator
 
             HashSet<int>[] uniquePartners = new HashSet<int>[_numPlayers];
             HashSet<int>[] uniqueOpponents = new HashSet<int>[_numPlayers];
-            Dictionary<int, Dictionary<string, int>> metrics = InitializeMetrics(); // all metrics collected using player IDs & converted to string names when output
+            Dictionary<int, Dictionary<string, int>> metrics = InitializeMetrics(uniquePartners, uniqueOpponents); // all metrics collected using player IDs & converted to string names when output
 
             for (int i = 0; i < _numRounds; i++)
             {
@@ -110,7 +110,7 @@ namespace TableTennisGenerator
         }
 
 
-        public Dictionary<int, Dictionary<string, int>> InitializeMetrics()
+        public Dictionary<int, Dictionary<string, int>> InitializeMetrics(HashSet<int>[] uniquePartners, HashSet<int>[] uniqueOpponents)
         {
             Dictionary<int, Dictionary<string, int>> metrics = new Dictionary<int, Dictionary<string, int>>();
             if (_collectMetrics)
@@ -123,6 +123,8 @@ namespace TableTennisGenerator
                                             { "uniquePartners", 0 },
                                             { "uniqueOpponents", 0 }
                                         });
+                    uniquePartners[i] = new HashSet<int>();
+                    uniqueOpponents[i] = new HashSet<int>();
                 }
             }
             return metrics;
@@ -167,7 +169,15 @@ namespace TableTennisGenerator
 
         public void OutputTournamentMetrics(Dictionary<int, Dictionary<string, int>> metrics)
         {
-
+            string fileName = "tournament_metrics_" + _tournamentId + ".csv";
+            StreamWriter stream = new StreamWriter(Path.Combine(_outputDir, fileName), false);
+            stream.WriteLine("numRounds, simMatches, player, gamesPlayed, uniquePartners, uniqueOpponents");
+            foreach (KeyValuePair<int, Dictionary<string, int>> entry in metrics)
+            {
+                stream.WriteLine($"{_numRounds}, {_simultaneousMatches}, {_playerNames[entry.Key]}, " +
+                    $"{entry.Value["gamesPlayed"]}, {entry.Value["uniquePartners"]}, {entry.Value["uniqueOpponents"]}");
+            }
+            stream.Close();
         }
 
         public List<List<Tuple<int, int>>> BuildRound()

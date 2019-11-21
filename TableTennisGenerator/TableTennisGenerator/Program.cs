@@ -12,7 +12,7 @@ namespace TableTennisGenerator
             int numRounds = 10;
             List<string> players = new List<string> { "Kate", "Mitchell", "Guanda", "Gaurav", "Nanhua", "Maor", "Tianguang", "Olivia", "Weiye", "Vikas", "Yogesh", "Bill", "Sophie" }; // "i", "j", "k", "l", "m" };
 
-            Tournament tournament = new Tournament("C:\\output\\tournament\\mixed_column_row_names.csv", numRounds, 2, "C:\\output\\tournament");
+            Tournament tournament = new Tournament(12, numRounds, 2, "C:\\output\\tournament", true);
             tournament.BuildTournament();
             
         }
