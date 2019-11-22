@@ -7,15 +7,44 @@ namespace TableTennisScorer
 {
     class Program
     {
+        private static string _input = "";
+        private static string _output = "";
         public static void Main(string[] args)
         {
-            string inputFile = "C:\\input\\sample_scoring_input.csv";
-            Scorer scorer = new Scorer(inputFile);
+            ParseArgs(args);
+
+            while (string.IsNullOrEmpty(_input) && !File.Exists(_input))
+            {
+                Console.WriteLine("Please enter an input file: ");
+                _input = Console.ReadLine();
+            }
+
+            while (string.IsNullOrEmpty(_output) && !File.Exists(_output))
+            {
+                Console.WriteLine("Please enter an output file: ");
+                _output = Console.ReadLine();
+            }
+
+            Scorer scorer = new Scorer(_input);
             scorer.GenerateMetrics();
 
+            scorer.WriteOutput(_output);
+        }
 
-            string outputFile = "C:\\output\\sample_scoring_output.csv";
-            scorer.WriteOutput(outputFile);
+        public static void ParseArgs(string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch (args[i].ToUpper())
+                {
+                    case "-I":
+                        _input = args[++i];
+                        break;
+                    case "-O":
+                        _output = args[++i];
+                        break;
+                }
+            }
         }
     }
 }
