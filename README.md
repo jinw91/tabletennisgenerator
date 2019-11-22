@@ -26,7 +26,7 @@ Assumptions:
 
 #### Solution Requirements
 1. The given number of rounds must be played. 
-2. If the given number of players is sufficient to play the given number of simultaneous matches, the given number of simultaneous matches must be played each round. If not, as many simultaneous rounds as possible (up to but not exceeding the user-supplied number) must be played.
+2. If the given number of players is sufficient to play the given number of simultaneous matches, the given number of simultaneous matches must be played each round. If not, as many simultaneous rounds as possible (up to but not exceeding the user-supplied number) must be played. (e.g., if the user says 3 simultaneous matches and gives 16 players, 3 simultaneous rounds must be played per round. If instead the user says 3 simultaneous matches but only gives 8 players, 2 simultaneous matches must be played per round.)
 3. Maximize the number of unique teams that play (i.e., maximize the number of unique partners each player plays with)
 4. Minimize the variance in the number of games played by each player (i.e., as much as possible, each player should play the same number of games).
 
