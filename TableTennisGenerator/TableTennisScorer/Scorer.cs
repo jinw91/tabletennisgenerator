@@ -41,30 +41,29 @@ namespace TableTennisScorer
 
                     if (parts.Length == 8 && int.TryParse(parts[FIRST_SCORE], out int firstScore) && int.TryParse(parts[SECOND_SCORE], out int secondScore))
                     {
-                        if (!_playerMetrics.ContainsKey(parts[FIRST_NAME]))
+                        List<string> names = new List<string>
                         {
-                            InitializePlayer(parts[FIRST_NAME]);
-                        }
-                        if (!_playerMetrics.ContainsKey(parts[FIRST_PARTNER_NAME]))
+                            parts[FIRST_NAME].Trim(),
+                            parts[FIRST_PARTNER_NAME].Trim(),
+                            parts[SECOND_NAME].Trim(),
+                            parts[SECOND_PARTNER_NAME].Trim()
+                        };
+
+                        foreach (string name in names)
                         {
-                            InitializePlayer(parts[FIRST_PARTNER_NAME]);
-                        }
-                        if (!_playerMetrics.ContainsKey(parts[SECOND_NAME]))
-                        {
-                            InitializePlayer(parts[SECOND_NAME]);
-                        }
-                        if (!_playerMetrics.ContainsKey(parts[SECOND_PARTNER_NAME]))
-                        {
-                            InitializePlayer(parts[SECOND_PARTNER_NAME]);
+                            if (!_playerMetrics.ContainsKey(name))
+                            {
+                                InitializePlayer(name);
+                            }
                         }
 
                         if (firstScore > secondScore)
                         {
-                            SetMetrics(parts[FIRST_NAME], parts[FIRST_PARTNER_NAME], parts[SECOND_NAME], parts[SECOND_PARTNER_NAME], firstScore, secondScore);
+                            SetMetrics(names[0], names[1], names[2], names[3], firstScore, secondScore);
                         }
                         else
                         {
-                            SetMetrics(parts[SECOND_NAME], parts[SECOND_PARTNER_NAME], parts[FIRST_NAME], parts[FIRST_PARTNER_NAME], secondScore, firstScore);
+                            SetMetrics(names[2], names[3], names[0], names[1], secondScore, firstScore);
                         }
                     }
                 }
@@ -80,6 +79,23 @@ namespace TableTennisScorer
             return _playerMetrics;
         }
 
+        public void WriteOutput(string outputFile)
+        {
+            using (StreamWriter streamWriter = new StreamWriter(outputFile, false))
+            {
+                streamWriter.WriteLine("Player,Games Played,Games Won,Points Scored,Points Lost,Points Per Game,Point Differential");
+                foreach (KeyValuePair<string, Dictionary<string, double>> keyValuePair in _playerMetrics)
+                {
+                    streamWriter.Write($"{keyValuePair.Key},");
+                    foreach (KeyValuePair<string, double> propertyValuePair in keyValuePair.Value)
+                    {
+                        streamWriter.Write($"{propertyValuePair.Value},");
+                    }
+                    streamWriter.Write("\n");
+                }
+            }
+        }
+
         private void InitializePlayer(string player)
         {
             Dictionary<string, double> metrics = new Dictionary<string, double>();
@@ -91,27 +107,27 @@ namespace TableTennisScorer
             _playerMetrics.Add(player, metrics);
         }
 
-        private void SetMetrics(string player1, string partner1, string player2, string partner2, int winningScore, int losingScore)
+        private void SetMetrics(string winner1, string winner2, string loser1, string loser2, int winningScore, int losingScore)
         {
-            _playerMetrics[player1][GamesPlayed]++;
-            _playerMetrics[partner1][GamesPlayed]++;
-            _playerMetrics[player2][GamesPlayed]++;
-            _playerMetrics[partner2][GamesPlayed]++;
+            _playerMetrics[winner1][GamesPlayed]++;
+            _playerMetrics[winner2][GamesPlayed]++;
+            _playerMetrics[loser1][GamesPlayed]++;
+            _playerMetrics[loser2][GamesPlayed]++;
 
-            _playerMetrics[player1][GamesWon]++;
-            _playerMetrics[partner1][GamesWon]++;
+            _playerMetrics[winner1][GamesWon]++;
+            _playerMetrics[winner2][GamesWon]++;
 
-            _playerMetrics[player1][PointsScored] += winningScore;
-            _playerMetrics[partner1][PointsScored] += winningScore;
+            _playerMetrics[winner1][PointsScored] += winningScore;
+            _playerMetrics[winner2][PointsScored] += winningScore;
 
-            _playerMetrics[player2][PointsScored] += losingScore;
-            _playerMetrics[partner2][PointsScored] += losingScore;
+            _playerMetrics[loser1][PointsScored] += losingScore;
+            _playerMetrics[loser2][PointsScored] += losingScore;
 
-            _playerMetrics[player1][PointsLost] += losingScore;
-            _playerMetrics[partner1][PointsLost] += losingScore;
+            _playerMetrics[winner1][PointsLost] += losingScore;
+            _playerMetrics[winner2][PointsLost] += losingScore;
 
-            _playerMetrics[player2][PointsLost] += winningScore;
-            _playerMetrics[partner2][PointsLost] += winningScore;
+            _playerMetrics[loser1][PointsLost] += winningScore;
+            _playerMetrics[loser2][PointsLost] += winningScore;
         }
     }
 }
