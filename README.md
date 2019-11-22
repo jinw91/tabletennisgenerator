@@ -14,19 +14,21 @@ Users supply a list of players, the number of rounds to play, and the number of 
 | Number of matches that can be played simultaneously within a single round |
 | Number of rounds to be played  |
 
+|     Output            |
+|------------------------|
+| An enumeration of teams for each match within each round that fulfills the listed requirements for the solution. |
+
 ```
 Assumptions: 
 	1. Each team consists of 2 players.
 	2. Each match consists of 2 teams (i.e., each team plays one other team in a match).
 ```
 
-|     Output            |
-|------------------------|
-| An enumeration of teams for each match within each round that fulfills the listed requirements for the solution. |
-
 #### Solution Requirements
-1. Maximize the number of unique teams that play (i.e., maximize the number of unique partners each player plays with)
-2. Minimize the variance in the number of games played by each player (i.e., as much as possible, each player should play the same number of games).
+1. The given number of rounds must be played. 
+2. If the given number of players is sufficient to play the given number of simultaneous matches, the given number of simultaneous matches must be played each round. If not, as many simultaneous rounds as possible (up to but not exceeding the user-supplied number) must be played.
+3. Maximize the number of unique teams that play (i.e., maximize the number of unique partners each player plays with)
+4. Minimize the variance in the number of games played by each player (i.e., as much as possible, each player should play the same number of games).
 
 #### Example
 Given the list of players ```Sally, John, Bill, Bob, Mary, Hank, Sue, Tom```, 2 simultaneous matches, and 4 rounds, the program could produce the following:
