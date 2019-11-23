@@ -73,7 +73,7 @@ namespace TableTennisGenerator
 
                     case "-S":
                         _numSimultaneousMatches = args[++i];
-                        // Leaving numRounds to be string so we can re-enter input if corrupt rather than throw exception at beginning
+                        // Leaving numSimultaneousMatches to be string so we can re-enter input if corrupt rather than throw exception at beginning
                         break;
                 }
             }
