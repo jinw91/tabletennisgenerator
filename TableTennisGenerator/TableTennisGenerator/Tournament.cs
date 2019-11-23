@@ -5,8 +5,7 @@ using System.Linq;
 
 namespace TableTennisGenerator
 {
-
-    class Tournament
+    public class Tournament
     {
         int _numPlayers;
         int _numRounds;
