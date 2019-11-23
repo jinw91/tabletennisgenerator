@@ -8,6 +8,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableTennisScorer", "TableTennisScorer\TableTennisScorer.csproj", "{E32C82CD-ACBE-4FA1-ABA8-83C9EA69614B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestTournamentBuilds", "TestTournamentBuilds\TestTournamentBuilds.csproj", "{425A1374-D617-4D5A-B444-E11EB6A47ECB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{60221C50-079A-49C1-AB08-D1D1D827CEEA} = {60221C50-079A-49C1-AB08-D1D1D827CEEA}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

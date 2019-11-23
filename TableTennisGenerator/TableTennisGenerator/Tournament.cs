@@ -67,6 +67,8 @@ namespace TableTennisGenerator
             _playerNames = playerNames;
         }
 
+        public Tournament(string playerNamesFile, int numRounds, int simultaneousMatches, string fileDirectory) : this(ReadNamesFromFile(playerNamesFile), numRounds, simultaneousMatches, fileDirectory) { }
+
         public static List<string> ReadNamesFromFile(string fileName)
         {
             List<string> playerNames = new List<string>();
@@ -81,9 +83,7 @@ namespace TableTennisGenerator
             }
             return playerNames;
         }
-
-        public Tournament(string playerNamesFile, int numRounds, int simultaneousMatches, string fileDirectory) : this(ReadNamesFromFile(playerNamesFile), numRounds, simultaneousMatches, fileDirectory) { }
-
+        
         public Dictionary<int, List<int>> InitializeGraph()
         {
             Dictionary<int, List<int>> players = new Dictionary<int, List<int>>();
