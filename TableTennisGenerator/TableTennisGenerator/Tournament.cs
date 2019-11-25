@@ -24,21 +24,21 @@ namespace TableTennisGenerator
 
             int playersPerMatch = playersPerTeam * teamsPerMatch;
 
-            int maxPossibleSimultaneousMatches = _numPlayers / playersPerMatch;
+            int actualSimultaneousMatches = Math.Min(_numPlayers / playersPerMatch, simultaneousMatches);
 
-            if (maxPossibleSimultaneousMatches != simultaneousMatches)
+            if (actualSimultaneousMatches != simultaneousMatches)
             {
-                if (maxPossibleSimultaneousMatches == 0)
+                if (actualSimultaneousMatches == 0)
                 {
                     throw new ArgumentOutOfRangeException($"You are trying to set up a tournament with {_numPlayers} players, " +
                         $"but a minimum of {playersPerMatch} are required to play a single match.");
                 }
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"WARNING: You specified {simultaneousMatches} match(es) should be played simultaneously, but with {_numPlayers} players, " +
-                    $"only {maxPossibleSimultaneousMatches} match(es) can be played. Building tournament with {maxPossibleSimultaneousMatches} match(es) per round.");
+                    $"only {actualSimultaneousMatches} match(es) can be played. Building tournament with {actualSimultaneousMatches} match(es) per round.");
                 Console.ResetColor();
             }
-            return maxPossibleSimultaneousMatches;
+            return actualSimultaneousMatches;
         }
 
         public Tournament(int numPlayers, int numRounds, int simultaneousMatches, string fileDirectory, bool collectMetrics)
